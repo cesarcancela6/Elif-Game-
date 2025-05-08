@@ -1,0 +1,181 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego 2D de Plataformas</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }canvas {
+        display: block;
+        background: #87CEEB;
+    }
+</style>
+
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas><script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configuración inicial del canvas
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Variables del juego
+    let player = {
+        x: 50,
+        y: canvas.height - 150,
+        width: 50,
+        height: 50,
+        color: 'red',
+        dy: 0,
+        jumping: false
+    };
+
+    let gravity = 1.5;
+    let isGameRunning = true;
+
+    let obstacles = [];
+    let coins = [];
+    let score = 0;
+
+    // Generar obstáculos y monedas
+    function generateObstaclesAndCoins() {
+        if (Math.random() < 0.02) {
+            obstacles.push({
+                x: canvas.width,
+                y: canvas.height - 150,
+                width: 50,
+                height: 50,
+                color: 'black'
+            });
+        }
+
+        if (Math.random() < 0.01) {
+            coins.push({
+                x: canvas.width,
+                y: canvas.height - 200,
+                width: 30,
+                height: 30,
+                color: 'gold'
+            });
+        }
+    }
+
+    // Dibujar obstáculos y monedas
+    function drawObstaclesAndCoins() {
+        obstacles.forEach(obstacle => {
+            ctx.fillStyle = obstacle.color;
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        });
+
+        coins.forEach(coin => {
+            ctx.fillStyle = coin.color;
+            ctx.beginPath();
+            ctx.arc(coin.x + coin.width / 2, coin.y + coin.height / 2, coin.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    // Actualizar posición de obstáculos y monedas
+    function updateObstaclesAndCoins() {
+        obstacles.forEach(obstacle => {
+            obstacle.x -= 5;
+        });
+
+        coins.forEach(coin => {
+            coin.x -= 5;
+        });
+
+        obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+        coins = coins.filter(coin => coin.x + coin.width > 0);
+    }
+
+    // Detectar colisiones
+    function detectCollisions() {
+        obstacles.forEach(obstacle => {
+            if (
+                player.x < obstacle.x + obstacle.width &&
+                player.x + player.width > obstacle.x &&
+                player.y < obstacle.y + obstacle.height &&
+                player.y + player.height > obstacle.y
+            ) {
+                isGameRunning = false;
+                alert(`Game Over! Puntuación: ${score}`);
+            }
+        });
+
+        coins.forEach((coin, index) => {
+            if (
+                player.x < coin.x + coin.width &&
+                player.x + player.width > coin.x &&
+                player.y < coin.y + coin.height &&
+                player.y + player.height > coin.y
+            ) {
+                coins.splice(index, 1);
+                score++;
+            }
+        });
+    }
+
+    // Dibuja al jugador
+    function drawPlayer() {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    // Maneja la física del salto
+    function updatePlayer() {
+        if (player.jumping) {
+            player.dy += gravity;
+            player.y += player.dy;
+
+            if (player.y >= canvas.height - 150) {
+                player.y = canvas.height - 150;
+                player.jumping = false;
+                player.dy = 0;
+            }
+        }
+    }
+
+    // Detecta teclas para salto
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !player.jumping) {
+            player.jumping = true;
+            player.dy = -20;
+        }
+    });
+
+    // Dibujar puntuación
+    function drawScore() {
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Puntuación: ${score}`, 20, 30);
+    }
+
+    // Bucle del juego
+    function gameLoop() {
+        if (!isGameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawPlayer();
+        updatePlayer();
+
+        generateObstaclesAndCoins();
+        drawObstaclesAndCoins();
+        updateObstaclesAndCoins();
+
+        detectCollisions();
+        drawScore();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+
+</body>
+</html>
